@@ -25,14 +25,32 @@
       color: #d1d5db;
     }
     @media print {
+      * {
+        margin: 0;
+        padding: 0;
+      }
+      html, body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
       .no-print { display: none !important; }
       .print-area { 
-        padding: 10mm;
+        padding: 8mm;
         width: 210mm;
         margin: 0 auto;
+        background: white !important;
+      }
+      body {
+        background: white !important;
       }
       .grid-cell { border: 1.5px solid #333 !important; }
       .grid-cell.empty-space { border: 1.5px dashed #aaa !important; }
+      @page {
+        size: A4;
+        margin: 8mm;
+      }
     }
   </style>
   <style>body { box-sizing: border-box; }</style>
@@ -41,37 +59,40 @@
   <script src="/_sdk/element_sdk.js" type="text/javascript"></script>
  </head>
  <body class="h-full overflow-auto bg-amber-50">
-  <div class="w-full min-h-full p-4 md:p-8"><!-- Header -->
+  <div class="w-full min-h-full p-4 md:p-8">
+   <!-- Header -->
    <div class="no-print text-center mb-6">
     <h1 id="main-title" class="text-3xl md:text-4xl font-black text-amber-900" style="font-family:'Gaegu',cursive">📝 깍두기 공책 생성기</h1>
     <p class="text-amber-700 mt-1 text-sm">문장을 입력하면 바로 학습지가 만들어져요!</p>
    </div><!-- Theme Tabs -->
-   <div class="no-print max-w-2xl mx-auto flex gap-2 mb-6">
-    <button id="theme-grid" class="theme-tab flex-1 px-4 py-2.5 rounded-t-xl font-bold text-lg border-b-4 border-amber-500 bg-amber-100 text-amber-900">📝 깍두기 공책</button> <button id="theme-dictation" class="theme-tab flex-1 px-4 py-2.5 rounded-t-xl font-bold text-lg border-b-2 border-gray-300 bg-gray-100 text-gray-600">✍️ 받아쓰기</button>
+   <div class="no-print max-w-2xl mx-auto flex gap-2 mb-6"><button id="theme-grid" class="theme-tab flex-1 px-4 py-2.5 rounded-t-xl font-bold text-lg border-b-4 border-amber-500 bg-amber-100 text-amber-900">📝 깍두기 공책</button> <button id="theme-dictation" class="theme-tab flex-1 px-4 py-2.5 rounded-t-xl font-bold text-lg border-b-2 border-gray-300 bg-gray-100 text-gray-600">✍️ 받아쓰기</button>
    </div><!-- Controls -->
-   <div class="no-print max-w-2xl mx-auto bg-white rounded-2xl shadow-lg p-5 mb-6 border-2 border-amber-200">
-    <!-- Grid Input -->
-    <div id="grid-input-section">
-     <label for="sentence-input" class="block font-bold text-amber-900 mb-2 text-lg">✏️ 문장 입력</label> <textarea id="sentence-input" rows="3" placeholder="예: 나는 오늘 학교에 갔어요." class="w-full border-2 border-amber-300 rounded-xl p-3 text-lg focus:outline-none focus:border-amber-500 resize-none"></textarea>
+   <div class="no-print max-w-2xl mx-auto bg-white rounded-2xl shadow-lg p-5 mb-6 border-2 border-amber-200"><!-- Grid Input -->
+    <div id="grid-input-section"><label for="sentence-input" class="block font-bold text-amber-900 mb-2 text-lg">✏️ 문장 입력</label> <textarea id="sentence-input" rows="3" placeholder="예: 나는 오늘 학교에 갔어요." class="w-full border-2 border-amber-300 rounded-xl p-3 text-lg focus:outline-none focus:border-amber-500 resize-none"></textarea>
     </div><!-- Dictation Input -->
-    <div id="dictation-input-section" class="hidden">
-     <label class="block font-bold text-amber-900 mb-2 text-lg">✏️ 받아쓰기 문제</label>
+    <div id="dictation-input-section" class="hidden"><label class="block font-bold text-amber-900 mb-2 text-lg">✏️ 받아쓰기 문제</label>
      <div class="space-y-2 max-h-96 overflow-y-auto">
       <div id="dictation-inputs"></div>
      </div><button id="add-dictation-btn" class="mt-3 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg text-sm">+ 문제 추가</button>
     </div><!-- Options Row -->
-    <div class="mt-4 flex flex-wrap gap-4"><!-- Size -->
-     <div><span class="font-bold text-amber-900 text-sm block mb-1">칸 크기</span>
-      <div class="flex gap-1"><button data-size="large" class="size-btn px-3 py-1.5 rounded-lg text-sm font-bold border-2 border-amber-400 bg-amber-100 text-amber-800">크게</button> <button data-size="medium" class="size-btn px-3 py-1.5 rounded-lg text-sm font-bold border-2 border-amber-400 bg-amber-400 text-white">보통</button> <button data-size="small" class="size-btn px-3 py-1.5 rounded-lg text-sm font-bold border-2 border-amber-400 bg-amber-100 text-amber-800">작게</button>
+    <div class="mt-4 flex flex-wrap gap-4">
+     <!-- Size -->
+     <div>
+      <span class="font-bold text-amber-900 text-sm block mb-1">칸 크기</span>
+      <div class="flex gap-1">
+       <button data-size="large" class="size-btn px-3 py-1.5 rounded-lg text-sm font-bold border-2 border-amber-400 bg-amber-100 text-amber-800">크게</button> <button data-size="medium" class="size-btn px-3 py-1.5 rounded-lg text-sm font-bold border-2 border-amber-400 bg-amber-400 text-white">보통</button> <button data-size="small" class="size-btn px-3 py-1.5 rounded-lg text-sm font-bold border-2 border-amber-400 bg-amber-100 text-amber-800">작게</button>
       </div>
      </div><!-- Mode -->
-     <div><span class="font-bold text-amber-900 text-sm block mb-1">출력 모드</span>
-      <div class="flex gap-1"><button data-mode="normal" class="mode-btn px-3 py-1.5 rounded-lg text-sm font-bold border-2 border-teal-400 bg-teal-400 text-white">일반</button> <button data-mode="trace" class="mode-btn px-3 py-1.5 rounded-lg text-sm font-bold border-2 border-teal-400 bg-teal-50 text-teal-800">따라쓰기</button> <button data-mode="blank" class="mode-btn px-3 py-1.5 rounded-lg text-sm font-bold border-2 border-teal-400 bg-teal-50 text-teal-800">빈칸연습</button>
+     <div>
+      <span class="font-bold text-amber-900 text-sm block mb-1">출력 모드</span>
+      <div class="flex gap-1">
+       <button data-mode="normal" class="mode-btn px-3 py-1.5 rounded-lg text-sm font-bold border-2 border-teal-400 bg-teal-400 text-white">일반</button> <button data-mode="trace" class="mode-btn px-3 py-1.5 rounded-lg text-sm font-bold border-2 border-teal-400 bg-teal-50 text-teal-800">따라쓰기</button> <button data-mode="blank" class="mode-btn px-3 py-1.5 rounded-lg text-sm font-bold border-2 border-teal-400 bg-teal-50 text-teal-800">빈칸연습</button>
       </div>
      </div>
     </div><!-- Generate Button --> <button id="generate-btn" class="mt-5 w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-black text-xl rounded-xl transition-colors shadow-md"> 🎯 학습지 생성 </button>
    </div><!-- Print Button -->
-   <div class="no-print max-w-2xl mx-auto mb-4 text-center"><button id="print-btn" class="hidden px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl shadow transition-colors"> 🖨️ 인쇄 / PDF 저장 </button>
+   <div class="no-print max-w-2xl mx-auto mb-4 text-center">
+    <button id="print-btn" class="hidden px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl shadow transition-colors"> 🖨️ 인쇄 / PDF 저장 </button>
    </div><!-- Preview Area -->
    <div id="preview" class="print-area max-w-4xl mx-auto"></div>
   </div>
@@ -384,5 +405,5 @@
 
 
   </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9fafde8b0624ea92',t:'MTc3ODY1NjQ5OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9fafe78192c3ea92',t:'MTc3ODY1Njg2Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
