@@ -1,453 +1,681 @@
 <!doctype html>
 <html lang="ko" class="h-full">
- <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <title>깍두기 공책 생성기</title>
+
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&amp;family=Noto+Serif+KR:wght@400;700;900&amp;display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700;900&amp;display=swap" rel="stylesheet">
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&family=Noto+Serif+KR:wght@400;700;900&display=swap"
+    rel="stylesheet"
+  />
+
   <style>
-    body { font-family: 'Noto Sans KR', sans-serif; }
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      box-sizing: border-box;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: inherit;
+    }
+
     .grid-cell {
       aspect-ratio: 1;
       display: flex;
       align-items: center;
       justify-content: center;
+
       border: 1.5px solid #333;
       background: #fff;
     }
+
     .grid-cell.empty-space {
-      border-color: #333;
-      border-style: solid;
+      border-color: #999;
     }
+
     .trace-mode {
-      color: #d1d5db;
+      color: #c7c7c7;
     }
+
+    /* ---------------- PRINT ---------------- */
+
+    @page {
+      size: A4;
+      margin: 10mm;
+    }
+
     @media print {
-      * {
-        margin: 0 !important;
-        padding: 0 !important;
-        box-sizing: border-box !important;
-      }
-      html, body {
-        width: 100%;
-        height: auto;
-        margin: 0 !important;
-        padding: 0 !important;
-        background: white !important;
-      }
-      .no-print { display: none !important; }
-      .print-area { 
-        padding: 15mm 25mm 15mm 25mm !important;
-        width: 100%;
-        height: auto;
-        margin: 0 !important;
-        background: white !important;
-        display: block !important;
-        box-sizing: border-box !important;
-      }
+
+      html,
       body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
         background: white !important;
+        overflow: visible !important;
       }
-      .grid-cell { 
-        border: 1.5px solid #333 !important; 
+
+      .no-print {
+        display: none !important;
+      }
+
+      .print-area {
+        width: 100%;
+        margin: 0 auto !important;
+        padding: 8mm 10mm !important;
+
         background: white !important;
+
+        box-sizing: border-box;
+      }
+
+      .grid-cell {
+        border: 1.5px solid #333 !important;
+        background: white !important;
+
         break-inside: avoid;
+        page-break-inside: avoid;
       }
-      .grid-cell.empty-space { 
+
+      .grid-cell.empty-space {
         border: 1.5px solid #999 !important;
-        background: white !important;
       }
+
       .trace-mode {
         color: #999 !important;
       }
-      div[style*="display: grid"] {
+
+      .worksheet-grid {
         break-inside: avoid;
-      }
-      p[style*="font-bold"] {
-        margin-left: 0 !important;
-        padding-left: 0 !important;
-      }
-      @page {
-        size: A4;
-        margin: 10mm;
+        page-break-inside: avoid;
       }
     }
   </style>
-  <style>body { box-sizing: border-box; }</style>
-  <script src="https://cdn.jsdelivr.net/npm/lucide@0.263.0/dist/umd/lucide.min.js" type="text/javascript"></script>
-  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
-  <script src="/_sdk/element_sdk.js" type="text/javascript"></script>
- </head>
- <body class="h-full overflow-auto bg-amber-50">
+</head>
+
+<body class="h-full overflow-auto bg-amber-50">
+
   <div class="w-full min-h-full p-4 md:p-8">
-   <!-- Header -->
-   <div class="no-print text-center mb-6">
-    <h1 id="main-title" class="text-3xl md:text-4xl font-black text-amber-900" style="font-family:'Gaegu',cursive">📝 깍두기 공책 생성기</h1>
-    <p class="text-amber-700 mt-1 text-sm">문장을 입력하면 바로 학습지가 만들어져요!</p>
-   </div><!-- Theme Tabs -->
-   <div class="no-print max-w-2xl mx-auto flex gap-2 mb-6"><button id="theme-grid" class="theme-tab flex-1 px-4 py-2.5 rounded-t-xl font-bold text-lg border-b-4 border-amber-500 bg-amber-100 text-amber-900">📝 깍두기 공책</button> <button id="theme-dictation" class="theme-tab flex-1 px-4 py-2.5 rounded-t-xl font-bold text-lg border-b-2 border-gray-300 bg-gray-100 text-gray-600">✍️ 받아쓰기</button>
-   </div><!-- Controls -->
-   <div class="no-print max-w-2xl mx-auto bg-white rounded-2xl shadow-lg p-5 mb-6 border-2 border-amber-200"><!-- Grid Input -->
-    <div id="grid-input-section"><label for="sentence-input" class="block font-bold text-amber-900 mb-2 text-lg">✏️ 문장 입력</label> <textarea id="sentence-input" rows="3" placeholder="예: 나는 오늘 학교에 갔어요." class="w-full border-2 border-amber-300 rounded-xl p-3 text-lg focus:outline-none focus:border-amber-500 resize-none"></textarea>
-    </div><!-- Dictation Input -->
-    <div id="dictation-input-section" class="hidden"><label class="block font-bold text-amber-900 mb-2 text-lg">✏️ 받아쓰기 문제</label>
-     <div class="space-y-2 max-h-96 overflow-y-auto">
-      <div id="dictation-inputs"></div>
-     </div><button id="add-dictation-btn" class="mt-3 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg text-sm">+ 문제 추가</button>
-    </div><!-- Options Row -->
-    <div class="mt-4 flex flex-wrap gap-4">
-     <!-- Size -->
-     <div>
-      <span class="font-bold text-amber-900 text-sm block mb-1">칸 크기</span>
-      <div class="flex gap-1">
-       <button data-size="large" class="size-btn px-3 py-1.5 rounded-lg text-sm font-bold border-2 border-amber-400 bg-amber-100 text-amber-800">크게</button> <button data-size="medium" class="size-btn px-3 py-1.5 rounded-lg text-sm font-bold border-2 border-amber-400 bg-amber-400 text-white">보통</button> <button data-size="small" class="size-btn px-3 py-1.5 rounded-lg text-sm font-bold border-2 border-amber-400 bg-amber-100 text-amber-800">작게</button>
+
+    <!-- Header -->
+    <div class="no-print text-center mb-6">
+      <h1
+        class="text-3xl md:text-4xl font-black text-amber-900"
+        style="font-family:'Gaegu',cursive"
+      >
+        📝 깍두기 공책 생성기
+      </h1>
+
+      <p class="text-amber-700 mt-1 text-sm">
+        문장을 입력하면 바로 학습지가 만들어져요!
+      </p>
+    </div>
+
+    <!-- Theme Tabs -->
+    <div class="no-print max-w-2xl mx-auto flex gap-2 mb-6">
+
+      <button
+        id="theme-grid"
+        class="theme-tab flex-1 px-4 py-2.5 rounded-t-xl font-bold text-lg border-b-4 border-amber-500 bg-amber-100 text-amber-900"
+      >
+        📝 깍두기 공책
+      </button>
+
+      <button
+        id="theme-dictation"
+        class="theme-tab flex-1 px-4 py-2.5 rounded-t-xl font-bold text-lg border-b-2 border-gray-300 bg-gray-100 text-gray-600"
+      >
+        ✍️ 받아쓰기
+      </button>
+
+    </div>
+
+    <!-- Controls -->
+    <div class="no-print max-w-2xl mx-auto bg-white rounded-2xl shadow-lg p-5 mb-6 border-2 border-amber-200">
+
+      <!-- Grid Input -->
+      <div id="grid-input-section">
+
+        <label
+          for="sentence-input"
+          class="block font-bold text-amber-900 mb-2 text-lg"
+        >
+          ✏️ 문장 입력
+        </label>
+
+        <textarea
+          id="sentence-input"
+          rows="3"
+          placeholder="예: 나는 오늘 학교에 갔어요."
+          class="w-full border-2 border-amber-300 rounded-xl p-3 text-lg focus:outline-none focus:border-amber-500 resize-none"
+        ></textarea>
+
       </div>
-     </div><!-- Mode -->
-     <div>
-      <span class="font-bold text-amber-900 text-sm block mb-1">출력 모드</span>
-      <div class="flex gap-1">
-       <button data-mode="normal" class="mode-btn px-3 py-1.5 rounded-lg text-sm font-bold border-2 border-teal-400 bg-teal-400 text-white">일반</button> <button data-mode="trace" class="mode-btn px-3 py-1.5 rounded-lg text-sm font-bold border-2 border-teal-400 bg-teal-50 text-teal-800">따라쓰기</button> <button data-mode="blank" class="mode-btn px-3 py-1.5 rounded-lg text-sm font-bold border-2 border-teal-400 bg-teal-50 text-teal-800">빈칸연습</button>
+
+      <!-- Dictation Input -->
+      <div id="dictation-input-section" class="hidden">
+
+        <label class="block font-bold text-amber-900 mb-2 text-lg">
+          ✏️ 받아쓰기 문제
+        </label>
+
+        <div class="space-y-2 max-h-96 overflow-y-auto">
+          <div id="dictation-inputs"></div>
+        </div>
+
+        <button
+          id="add-dictation-btn"
+          class="mt-3 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-lg text-sm"
+        >
+          + 문제 추가
+        </button>
+
       </div>
-     </div>
-    </div><!-- Generate Button --> <button id="generate-btn" class="mt-5 w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-black text-xl rounded-xl transition-colors shadow-md"> 🎯 학습지 생성 </button>
-   </div><!-- Print Button -->
-   <div class="no-print max-w-2xl mx-auto mb-4 text-center">
-    <button id="print-btn" class="hidden px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl shadow transition-colors"> 🖨️ 인쇄 / PDF 저장 </button>
-   </div><!-- Preview Area -->
-   <div id="preview" class="print-area max-w-4xl mx-auto"></div>
+
+      <!-- Options -->
+      <div class="mt-4 flex flex-wrap gap-4">
+
+        <!-- Size -->
+        <div>
+
+          <span class="font-bold text-amber-900 text-sm block mb-1">
+            칸 크기
+          </span>
+
+          <div class="flex gap-1">
+
+            <button
+              data-size="large"
+              class="size-btn px-3 py-1.5 rounded-lg text-sm font-bold border-2 border-amber-400 bg-amber-100 text-amber-800"
+            >
+              크게
+            </button>
+
+            <button
+              data-size="medium"
+              class="size-btn px-3 py-1.5 rounded-lg text-sm font-bold border-2 border-amber-400 bg-amber-400 text-white"
+            >
+              보통
+            </button>
+
+            <button
+              data-size="small"
+              class="size-btn px-3 py-1.5 rounded-lg text-sm font-bold border-2 border-amber-400 bg-amber-100 text-amber-800"
+            >
+              작게
+            </button>
+
+          </div>
+        </div>
+
+        <!-- Mode -->
+        <div>
+
+          <span class="font-bold text-amber-900 text-sm block mb-1">
+            출력 모드
+          </span>
+
+          <div class="flex gap-1">
+
+            <button
+              data-mode="normal"
+              class="mode-btn px-3 py-1.5 rounded-lg text-sm font-bold border-2 border-teal-400 bg-teal-400 text-white"
+            >
+              일반
+            </button>
+
+            <button
+              data-mode="trace"
+              class="mode-btn px-3 py-1.5 rounded-lg text-sm font-bold border-2 border-teal-400 bg-teal-50 text-teal-800"
+            >
+              따라쓰기
+            </button>
+
+            <button
+              data-mode="blank"
+              class="mode-btn px-3 py-1.5 rounded-lg text-sm font-bold border-2 border-teal-400 bg-teal-50 text-teal-800"
+            >
+              빈칸연습
+            </button>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Generate -->
+      <button
+        id="generate-btn"
+        class="mt-5 w-full py-3 bg-amber-500 hover:bg-amber-600 text-white font-black text-xl rounded-xl transition-colors shadow-md"
+      >
+        🎯 학습지 생성
+      </button>
+
+    </div>
+
+    <!-- Print Button -->
+    <div class="no-print max-w-2xl mx-auto mb-4 text-center">
+
+      <button
+        id="print-btn"
+        class="hidden px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl shadow transition-colors"
+      >
+        🖨️ 인쇄 / PDF 저장
+      </button>
+
+    </div>
+
+    <!-- Preview -->
+    <div id="preview" class="print-area max-w-4xl mx-auto"></div>
+
   </div>
+
   <script>
+
     let currentSize = 'medium';
     let currentMode = 'normal';
-    let currentTheme = 'grid'; // 'grid' 또는 'dictation'
-    let dictationItems = []; // 받아쓰기 아이템 저장
-    const sizes = { large: { cell: 56, cols: 20, font: 28 }, medium: { cell: 44, cols: 20, font: 22 }, small: { cell: 36, cols: 20, font: 18 } };
+    let currentTheme = 'grid';
 
-    // Theme tabs
+    let dictationItems = [];
+
+    const sizes = {
+      large:  { cell: 56, cols: 20, font: 28 },
+      medium: { cell: 44, cols: 20, font: 22 },
+      small:  { cell: 36, cols: 20, font: 18 }
+    };
+
+    /* ---------------- UTIL ---------------- */
+
+    function createGrid(chars, mode = 'normal') {
+
+      const { cell, cols, font } = sizes[currentSize];
+
+      const grid = document.createElement('div');
+
+      grid.className = 'worksheet-grid';
+
+      grid.style.display = 'grid';
+
+      grid.style.gridTemplateColumns = `repeat(${cols}, ${cell}px)`;
+
+      grid.style.width = `${cell * cols}px`;
+
+      grid.style.gap = '0px';
+
+      /* 핵심 수정 */
+      grid.style.justifyContent = 'start';
+
+      grid.style.marginBottom = '12px';
+
+      chars.forEach(ch => {
+
+        const div = document.createElement('div');
+
+        div.className =
+          'grid-cell' + (ch === ' ' ? ' empty-space' : '');
+
+        div.style.width = cell + 'px';
+        div.style.height = cell + 'px';
+
+        div.style.fontSize = font + 'px';
+
+        div.style.fontFamily = "'Noto Serif KR', serif";
+
+        div.style.fontWeight = '400';
+
+        if (mode === 'trace') {
+          div.classList.add('trace-mode');
+        }
+
+        if (mode === 'blank') {
+          div.textContent = '';
+        } else {
+          div.textContent = ch === ' ' ? '' : ch;
+        }
+
+        grid.appendChild(div);
+      });
+
+      return grid;
+    }
+
+    function chunkArray(arr, size) {
+
+      const result = [];
+
+      for (let i = 0; i < arr.length; i += size) {
+        result.push(arr.slice(i, i + size));
+      }
+
+      return result;
+    }
+
+    /* ---------------- MODE UI ---------------- */
+
     function updateModeButtons() {
-      const modeContainer = document.querySelectorAll('.mode-btn');
-      
+
+      const modeButtons = document.querySelectorAll('.mode-btn');
+
       if (currentTheme === 'grid') {
-        // 깍두기 공책 모드: 일반/따라쓰기/빈칸연습
+
         const modes = ['normal', 'trace', 'blank'];
+
         const labels = ['일반', '따라쓰기', '빈칸연습'];
-        modeContainer.forEach((btn, idx) => {
+
+        modeButtons.forEach((btn, idx) => {
+
           btn.dataset.mode = modes[idx];
+
           btn.textContent = labels[idx];
-          btn.className = currentMode === modes[idx]
-            ? 'mode-btn px-3 py-1.5 rounded-lg text-sm font-bold border-2 border-teal-400 bg-teal-400 text-white'
-            : 'mode-btn px-3 py-1.5 rounded-lg text-sm font-bold border-2 border-teal-400 bg-teal-50 text-teal-800';
+
+          btn.className =
+            currentMode === modes[idx]
+              ? 'mode-btn px-3 py-1.5 rounded-lg text-sm font-bold border-2 border-teal-400 bg-teal-400 text-white'
+              : 'mode-btn px-3 py-1.5 rounded-lg text-sm font-bold border-2 border-teal-400 bg-teal-50 text-teal-800';
         });
+
       } else {
-        // 받아쓰기 모드: 문제만/답지만/따라쓰기
-        const modes = ['dictation-problem', 'dictation-answer', 'dictation-trace'];
-        const labels = ['문제만', '답지만', '따라쓰기'];
-        modeContainer.forEach((btn, idx) => {
+
+        const modes = [
+          'dictation-problem',
+          'dictation-answer',
+          'dictation-trace'
+        ];
+
+        const labels = [
+          '문제만',
+          '답지만',
+          '따라쓰기'
+        ];
+
+        modeButtons.forEach((btn, idx) => {
+
           btn.dataset.mode = modes[idx];
+
           btn.textContent = labels[idx];
-          btn.className = currentMode === modes[idx]
-            ? 'mode-btn px-3 py-1.5 rounded-lg text-sm font-bold border-2 border-blue-400 bg-blue-400 text-white'
-            : 'mode-btn px-3 py-1.5 rounded-lg text-sm font-bold border-2 border-blue-400 bg-blue-50 text-blue-800';
+
+          btn.className =
+            currentMode === modes[idx]
+              ? 'mode-btn px-3 py-1.5 rounded-lg text-sm font-bold border-2 border-blue-400 bg-blue-400 text-white'
+              : 'mode-btn px-3 py-1.5 rounded-lg text-sm font-bold border-2 border-blue-400 bg-blue-50 text-blue-800';
         });
       }
     }
 
-    document.getElementById('theme-grid').addEventListener('click', () => {
-      currentTheme = 'grid';
-      currentMode = 'normal';
-      document.getElementById('grid-input-section').classList.remove('hidden');
-      document.getElementById('dictation-input-section').classList.add('hidden');
-      document.getElementById('theme-grid').className = 'theme-tab flex-1 px-4 py-2.5 rounded-t-xl font-bold text-lg border-b-4 border-amber-500 bg-amber-100 text-amber-900';
-      document.getElementById('theme-dictation').className = 'theme-tab flex-1 px-4 py-2.5 rounded-t-xl font-bold text-lg border-b-2 border-gray-300 bg-gray-100 text-gray-600';
-      document.getElementById('preview').innerHTML = '';
+    /* ---------------- TAB ---------------- */
+
+    document.getElementById('theme-grid')
+      .addEventListener('click', () => {
+
+        currentTheme = 'grid';
+
+        currentMode = 'normal';
+
+        document
+          .getElementById('grid-input-section')
+          .classList.remove('hidden');
+
+        document
+          .getElementById('dictation-input-section')
+          .classList.add('hidden');
+
+        updateModeButtons();
+
+        document.getElementById('preview').innerHTML = '';
+      });
+
+    document.getElementById('theme-dictation')
+      .addEventListener('click', () => {
+
+        currentTheme = 'dictation';
+
+        currentMode = 'dictation-problem';
+
+        document
+          .getElementById('grid-input-section')
+          .classList.add('hidden');
+
+        document
+          .getElementById('dictation-input-section')
+          .classList.remove('hidden');
+
+        renderDictationInputs();
+
+        updateModeButtons();
+
+        document.getElementById('preview').innerHTML = '';
+      });
+
+    /* ---------------- SIZE ---------------- */
+
+    document.querySelectorAll('.size-btn')
+      .forEach(btn => {
+
+        btn.addEventListener('click', () => {
+
+          currentSize = btn.dataset.size;
+
+          document.querySelectorAll('.size-btn')
+            .forEach(b => {
+
+              b.className =
+                'size-btn px-3 py-1.5 rounded-lg text-sm font-bold border-2 border-amber-400 bg-amber-100 text-amber-800';
+            });
+
+          btn.className =
+            'size-btn px-3 py-1.5 rounded-lg text-sm font-bold border-2 border-amber-400 bg-amber-400 text-white';
+        });
+      });
+
+    /* ---------------- MODE BUTTON ---------------- */
+
+    document.addEventListener('click', (e) => {
+
+      if (!e.target.classList.contains('mode-btn')) return;
+
+      currentMode = e.target.dataset.mode;
+
       updateModeButtons();
+
+      if (currentTheme === 'dictation') {
+        generateDictationWorksheet();
+      }
     });
 
-    document.getElementById('theme-dictation').addEventListener('click', () => {
-      currentTheme = 'dictation';
-      currentMode = 'dictation-problem';
-      document.getElementById('grid-input-section').classList.add('hidden');
-      document.getElementById('dictation-input-section').classList.remove('hidden');
-      document.getElementById('theme-grid').className = 'theme-tab flex-1 px-4 py-2.5 rounded-t-xl font-bold text-lg border-b-2 border-gray-300 bg-gray-100 text-gray-600';
-      document.getElementById('theme-dictation').className = 'theme-tab flex-1 px-4 py-2.5 rounded-t-xl font-bold text-lg border-b-4 border-blue-500 bg-blue-100 text-blue-900';
-      document.getElementById('preview').innerHTML = '';
-      renderDictationInputs();
-      updateModeButtons();
-    });
+    /* ---------------- DICTATION INPUTS ---------------- */
 
-    // Dictation 아이템 렌더링
     function renderDictationInputs() {
+
       const container = document.getElementById('dictation-inputs');
+
       container.innerHTML = '';
+
       for (let i = 1; i <= 10; i++) {
+
         const div = document.createElement('div');
+
         div.className = 'flex items-center gap-2';
-        div.innerHTML = `<span class="font-bold text-amber-900 w-8">${i}.</span>
-          <input type="text" class="dictation-input flex-1 border-2 border-amber-300 rounded-lg p-2 focus:outline-none focus:border-amber-500" placeholder="문장을 입력하세요" value="${dictationItems[i - 1] || ''}">`;
+
+        div.innerHTML = `
+          <span class="font-bold text-amber-900 w-8">${i}.</span>
+
+          <input
+            type="text"
+            class="dictation-input flex-1 border-2 border-amber-300 rounded-lg p-2 focus:outline-none focus:border-amber-500"
+            placeholder="문장을 입력하세요"
+            value="${dictationItems[i - 1] || ''}"
+          >
+        `;
+
         const input = div.querySelector('.dictation-input');
-        input.addEventListener('change', () => { dictationItems[i - 1] = input.value; });
+
+        input.addEventListener('change', () => {
+          dictationItems[i - 1] = input.value;
+        });
+
         container.appendChild(div);
       }
     }
 
-    document.getElementById('add-dictation-btn').addEventListener('click', () => {
-      const inputs = document.querySelectorAll('.dictation-input');
-      inputs.forEach((input, idx) => { dictationItems[idx] = input.value; });
-      generateDictationWorksheet();
-      document.getElementById('print-btn').classList.remove('hidden');
-    });
-
-    // Size buttons
-    document.querySelectorAll('.size-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        currentSize = btn.dataset.size;
-        document.querySelectorAll('.size-btn').forEach(b => { b.className = 'size-btn px-3 py-1.5 rounded-lg text-sm font-bold border-2 border-amber-400 bg-amber-100 text-amber-800'; });
-        btn.className = 'size-btn px-3 py-1.5 rounded-lg text-sm font-bold border-2 border-amber-400 bg-amber-400 text-white';
-      });
-    });
-
-    // Mode buttons - 정적 이벤트 리스너로 수정
-    document.addEventListener('click', (e) => {
-      if (e.target.classList.contains('mode-btn')) {
-        currentMode = e.target.dataset.mode;
-        if (currentTheme === 'grid') {
-          document.querySelectorAll('.mode-btn').forEach(b => { b.className = 'mode-btn px-3 py-1.5 rounded-lg text-sm font-bold border-2 border-teal-400 bg-teal-50 text-teal-800'; });
-          e.target.className = 'mode-btn px-3 py-1.5 rounded-lg text-sm font-bold border-2 border-teal-400 bg-teal-400 text-white';
-        } else {
-          document.querySelectorAll('.mode-btn').forEach(b => { b.className = 'mode-btn px-3 py-1.5 rounded-lg text-sm font-bold border-2 border-blue-400 bg-blue-50 text-blue-800'; });
-          e.target.className = 'mode-btn px-3 py-1.5 rounded-lg text-sm font-bold border-2 border-blue-400 bg-blue-400 text-white';
-        }
-        // 받아쓰기 모드에서 모드 변경 시 즉시 다시 생성
-        if (currentTheme === 'dictation') {
-          generateDictationWorksheet();
-        }
-      }
-    });
-
-    // Generate Grid
-    document.getElementById('generate-btn').addEventListener('click', () => {
-      if (currentTheme === 'grid') generateGridWorksheet();
-      else generateDictationWorksheet();
-    });
+    /* ---------------- GENERATE GRID ---------------- */
 
     function generateGridWorksheet() {
-      const text = document.getElementById('sentence-input').value;
+
+      const text =
+        document.getElementById('sentence-input').value;
+
       if (!text.trim()) return;
-      const allChars = text.split('');
-      const { cell, cols, font } = sizes[currentSize];
+
+      const chars = text.split('');
+
       const preview = document.getElementById('preview');
+
       preview.innerHTML = '';
 
-      function createGrid(chars, mode) {
-        const grid = document.createElement('div');
-        grid.style.display = 'grid';
-        grid.style.gridTemplateColumns = `repeat(20, ${cell}px)`;
-        grid.style.gap = '0px';
-        grid.style.justifyContent = 'center';
-        grid.style.marginBottom = '16px';
+      const chunks = chunkArray(chars, 20);
 
-        chars.forEach(ch => {
-          const div = document.createElement('div');
-          div.className = 'grid-cell' + (ch === ' ' ? ' empty-space' : '');
-          div.style.width = cell + 'px';
-          div.style.height = cell + 'px';
-          div.style.fontSize = font + 'px';
-          div.style.fontFamily = "'Noto Serif KR', serif";
-          div.style.fontWeight = '400';
-          if (mode === 'trace') div.classList.add('trace-mode');
-          if (mode === 'blank') {
-            div.textContent = '';
-          } else {
-            div.textContent = ch === ' ' ? '' : ch;
-          }
-          grid.appendChild(div);
-        });
-        return grid;
-      }
+      chunks.forEach(chunk => {
 
-      function wrapCharsIn20ColumnGrids(chars, mode, showAnswerAndPractice = false) {
-        const container = document.createElement('div');
-        
-        // 20칸씩 나누기
-        for (let i = 0; i < chars.length; i += 20) {
-          const chunk = chars.slice(i, i + 20);
-          
-          if (showAnswerAndPractice) {
-            // 빈칸연습 모드: 정답 + 연습
-            const label1 = document.createElement('p');
-            label1.className = 'text-sm font-bold text-gray-600 mb-1';
-            label1.textContent = '▼ 정답';
-            container.appendChild(label1);
-            container.appendChild(createGrid(chunk, 'normal'));
-            
-            const label2 = document.createElement('p');
-            label2.className = 'text-sm font-bold text-gray-600 mb-1 mt-4';
-            label2.textContent = '▼ 연습';
-            container.appendChild(label2);
-            container.appendChild(createGrid(chunk, 'blank'));
-          } else {
-            container.appendChild(createGrid(chunk, mode));
-          }
+        while (chunk.length < 20) {
+          chunk.push(' ');
         }
-        return container;
-      }
 
-      if (currentMode === 'blank') {
-        preview.appendChild(wrapCharsIn20ColumnGrids(allChars, 'normal', true));
-      } else {
-        preview.appendChild(wrapCharsIn20ColumnGrids(allChars, currentMode, false));
-      }
+        if (currentMode === 'blank') {
 
-      document.getElementById('print-btn').classList.remove('hidden');
-    }
+          const label1 = document.createElement('p');
+          label1.textContent = '▼ 정답';
+          label1.className = 'font-bold mb-2';
 
-    function generateDictationWorksheet() {
-      const validItems = dictationItems.filter(item => item && item.trim());
-      if (validItems.length === 0) return;
-      
-      const { cell, cols, font } = sizes[currentSize];
-      const preview = document.getElementById('preview');
-      preview.innerHTML = '';
+          preview.appendChild(label1);
 
-      function createGrid(chars, mode = 'blank') {
-        const grid = document.createElement('div');
-        grid.style.display = 'grid';
-        grid.style.gridTemplateColumns = `repeat(20, ${cell}px)`;
-        grid.style.gap = '0px';
-        grid.style.justifyContent = 'center';
-        grid.style.marginBottom = '8px';
+          preview.appendChild(createGrid(chunk, 'normal'));
 
-        chars.forEach(ch => {
-          const div = document.createElement('div');
-          div.className = 'grid-cell' + (ch === ' ' ? ' empty-space' : '');
-          div.style.width = cell + 'px';
-          div.style.height = cell + 'px';
-          div.style.fontSize = font + 'px';
-          div.style.fontFamily = "'Noto Serif KR', serif";
-          div.style.fontWeight = '400';
-          
-          if (mode === 'blank') {
-            div.textContent = '';
-          } else if (mode === 'answer') {
-            div.textContent = ch === ' ' ? '' : ch;
-          } else if (mode === 'trace') {
-            div.textContent = ch === ' ' ? '' : ch;
-            div.classList.add('trace-mode');
-          }
-          grid.appendChild(div);
-        });
-        return grid;
-      }
+          const label2 = document.createElement('p');
+          label2.textContent = '▼ 연습';
+          label2.className = 'font-bold mt-4 mb-2';
 
-      function wrapCharsIn20ColumnGrids(chars, mode) {
-        const container = document.createElement('div');
-        
-        // 20칸씩 나누기
-        for (let i = 0; i < chars.length; i += 20) {
-          let chunk = chars.slice(i, i + 20);
-          // 20칸 미만이면 빈 공간으로 채우기
-          while (chunk.length < 20) {
-            chunk.push(' ');
-          }
-          container.appendChild(createGrid(chunk, mode));
-        }
-        return container;
-      }
+          preview.appendChild(label2);
 
-      // 받아쓰기 워크시트 생성
-      validItems.forEach((item, idx) => {
-        const chars = item.split('');
+          preview.appendChild(createGrid(chunk, 'blank'));
 
-        if (currentMode === 'dictation-problem') {
-          // 문제만: 숫자와 깍두기 칸 안의 내용
-          const itemContainer = document.createElement('div');
-          itemContainer.style.marginBottom = '20px';
+        } else {
 
-          const itemNum = document.createElement('p');
-          itemNum.className = 'font-bold text-amber-900 mb-2';
-          itemNum.style.fontFamily = "'Noto Serif KR', serif";
-          itemNum.style.fontSize = '16px';
-          itemNum.style.margin = '0';
-          itemNum.style.marginBottom = '8px';
-          itemNum.style.paddingLeft = '0';
-          itemNum.textContent = `${idx + 1}.`;
-          itemContainer.appendChild(itemNum);
-          itemContainer.appendChild(wrapCharsIn20ColumnGrids(chars, 'answer'));
-
-          preview.appendChild(itemContainer);
-        } else if (currentMode === 'dictation-answer') {
-          // 답지만: 숫자와 빈 깍두기 칸
-          const itemContainer = document.createElement('div');
-          itemContainer.style.marginBottom = '20px';
-
-          const itemNum = document.createElement('p');
-          itemNum.className = 'font-bold text-amber-900 mb-2';
-          itemNum.style.fontFamily = "'Noto Serif KR', serif";
-          itemNum.style.fontSize = '16px';
-          itemNum.style.margin = '0';
-          itemNum.style.marginBottom = '8px';
-          itemNum.style.paddingLeft = '0';
-          itemNum.textContent = `${idx + 1}.`;
-          itemContainer.appendChild(itemNum);
-          itemContainer.appendChild(wrapCharsIn20ColumnGrids(chars, 'blank'));
-
-          preview.appendChild(itemContainer);
-        } else if (currentMode === 'dictation-trace') {
-          // 따라쓰기: 위에 숫자+깍두기 입력 / 중간에 숫자+연한 깍두기 / 아래 숫자+빈 깍두기
-          const itemContainer = document.createElement('div');
-          itemContainer.style.marginBottom = '20px';
-
-          // 첫 번째: 숫자와 깍두기 안의 입력한 내용
-          const itemNum1 = document.createElement('p');
-          itemNum1.className = 'font-bold text-amber-900 mb-2';
-          itemNum1.style.fontFamily = "'Noto Serif KR', serif";
-          itemNum1.style.fontSize = '16px';
-          itemNum1.style.margin = '0';
-          itemNum1.style.marginBottom = '8px';
-          itemNum1.style.paddingLeft = '0';
-          itemNum1.textContent = `${idx + 1}.`;
-          itemContainer.appendChild(itemNum1);
-          itemContainer.appendChild(wrapCharsIn20ColumnGrids(chars, 'answer'));
-
-          // 두 번째: 숫자와 연한 깍두기 입력 (trace)
-          const itemNum2 = document.createElement('p');
-          itemNum2.className = 'font-bold text-amber-900 mb-2';
-          itemNum2.style.fontFamily = "'Noto Serif KR', serif";
-          itemNum2.style.fontSize = '16px';
-          itemNum2.style.margin = '0';
-          itemNum2.style.marginTop = '16px';
-          itemNum2.style.marginBottom = '8px';
-          itemNum2.style.paddingLeft = '0';
-          itemNum2.textContent = `${idx + 1}.`;
-          itemContainer.appendChild(itemNum2);
-          itemContainer.appendChild(wrapCharsIn20ColumnGrids(chars, 'trace'));
-
-          // 세 번째: 숫자와 빈 깍두기 칸
-          const itemNum3 = document.createElement('p');
-          itemNum3.className = 'font-bold text-amber-900 mb-2';
-          itemNum3.style.fontFamily = "'Noto Serif KR', serif";
-          itemNum3.style.fontSize = '16px';
-          itemNum3.style.margin = '0';
-          itemNum3.style.marginTop = '16px';
-          itemNum3.style.marginBottom = '8px';
-          itemNum3.style.paddingLeft = '0';
-          itemNum3.textContent = `${idx + 1}.`;
-          itemContainer.appendChild(itemNum3);
-          itemContainer.appendChild(wrapCharsIn20ColumnGrids(chars, 'blank'));
-
-          preview.appendChild(itemContainer);
+          preview.appendChild(
+            createGrid(chunk, currentMode)
+          );
         }
       });
 
-      document.getElementById('print-btn').classList.remove('hidden');
+      document
+        .getElementById('print-btn')
+        .classList.remove('hidden');
     }
 
-    // Print
-    document.getElementById('print-btn').addEventListener('click', () => { window.print(); });
+    /* ---------------- GENERATE DICTATION ---------------- */
 
+    function generateDictationWorksheet() {
+
+      const preview = document.getElementById('preview');
+
+      preview.innerHTML = '';
+
+      const validItems =
+        dictationItems.filter(v => v && v.trim());
+
+      if (validItems.length === 0) return;
+
+      validItems.forEach((item, idx) => {
+
+        const wrapper = document.createElement('div');
+
+        wrapper.style.marginBottom = '24px';
+
+        const chunks = chunkArray(item.split(''), 20);
+
+        function addNumber() {
+
+          const p = document.createElement('p');
+
+          p.textContent = `${idx + 1}.`;
+
+          p.className =
+            'font-bold text-amber-900 mb-2';
+
+          p.style.fontSize = '16px';
+
+          wrapper.appendChild(p);
+        }
+
+        function addGrid(mode) {
+
+          chunks.forEach(chunk => {
+
+            while (chunk.length < 20) {
+              chunk.push(' ');
+            }
+
+            wrapper.appendChild(
+              createGrid(chunk, mode)
+            );
+          });
+        }
+
+        if (currentMode === 'dictation-problem') {
+
+          addNumber();
+          addGrid('answer');
+
+        } else if (currentMode === 'dictation-answer') {
+
+          addNumber();
+          addGrid('blank');
+
+        } else {
+
+          addNumber();
+          addGrid('answer');
+
+          addNumber();
+          addGrid('trace');
+
+          addNumber();
+          addGrid('blank');
+        }
+
+        preview.appendChild(wrapper);
+      });
+
+      document
+        .getElementById('print-btn')
+        .classList.remove('hidden');
+    }
+
+    /* ---------------- BUTTONS ---------------- */
+
+    document
+      .getElementById('generate-btn')
+      .addEventListener('click', () => {
+
+        if (currentTheme === 'grid') {
+          generateGridWorksheet();
+        } else {
+          generateDictationWorksheet();
+        }
+      });
+
+    document
+      .getElementById('print-btn')
+      .addEventListener('click', () => {
+
+        window.print();
+      });
 
   </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9fb6b1864487ea21',t:'MTc3ODcyODA1NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+
+</body>
 </html>
